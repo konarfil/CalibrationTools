@@ -33,10 +33,11 @@ $ ./install.sh
 ~~~~
 2. Compile exctract_OM_spectra
 ~~~~
+$ cd ../..
 $ git clone [https://github.com/konarfil/CalibrationScript.git]
-$ cd ../../build
+$ cd build
 $ chmod 755 compile.sh
 $ ./compile.sh
 ~~~~
 
-After this setup you can run the calibration scripts using run.sh. The bash script asks for a number of run which you want to read and how many events you want to read. Than it creates directories to save the output of extract_OM_spectra and fit_spectra and submits a job to CC-IN2P3. **The script only works for runs 813 and newer !** After the job finishes spectra histograms are saved in "../runs/run_###/OM_histos/", fits are saved in "../runs/run_###/fits/" and values of the $k$ parameter for individual modules are saved in "../runs/run_###/fits/calibration_params.txt".
+After this setup you can run the calibration scripts using "run.sh". The bash script asks for a number of run which you want to read and how many events you want to read. Than it creates directories to save the output of extract_OM_spectra and fit_spectra and submits a job to CC-IN2P3. **The script only works for runs 813 and newer !** After the job finishes spectra histograms are saved in "../runs/run_###/OM_histos/", fits are saved in "../runs/run_###/fits/" and values of the $k$ parameter for individual modules are saved in "../runs/run_###/fits/calibration_params.txt". If you log off CC-IN2P3 you should run "load_enviroment.sh"("build" folder) before running "run.sh". 
