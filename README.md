@@ -11,7 +11,7 @@ To pass the cut an electron has to meet several criteria:
 
 - initial vertex within 10 cm from a calibration source
 - final vertex within 20 cm from the front face center of the closest triggered OM
-- at least 3 triggered cells near the calibration source (checks a rectangle sized 11x10 tracker cell radii)
+- at least 4 triggered cells near the calibration source (checks a rectangle sized 11x10 tracker cell radii)
 - less than 16 tracker cells in time coincidence with the OM (time window between -0.2 and 5.0 us)
 
 If the track passes all conditions we calculate its estimated initial energy as
