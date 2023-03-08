@@ -22,7 +22,12 @@ where $\Delta E$ is a correction for energy lost by the electron while passing t
 A root macro used to fit energy spectra saved by "exctract_OM_spectra" using sum of three gaussian functions. It looks for a fit where the mean value of the first gaussian is closest to 976 keV. This fit is than saved as png image and the $k$ parameter is save into a text file.
 ## Usage
 Following steps describe how to run the scripts on CC-IN2P3:
-1. Install TKevent
+1. Clone the repository
+~~~~
+git clone https://github.com/konarfil/CalibrationScript.git
+cd CalibrationScript
+~~~~
+2. Install TKevent
 ~~~~
 $ git clone https://github.com/TomasKrizak/TKEvent.git
 $ cd TKEvent/RED_to_TK/
@@ -31,11 +36,9 @@ $ cd ../TKEvent/
 $ chmod 755 install.sh
 $ ./install.sh
 ~~~~
-2. Compile exctract_OM_spectra
+3. Compile exctract_OM_spectra
 ~~~~
-$ cd ../..
-$ git clone https://github.com/konarfil/CalibrationScript.git
-$ cd build
+$ cd ../../build
 $ chmod 755 compile.sh
 $ ./compile.sh
 ~~~~
