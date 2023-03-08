@@ -24,7 +24,7 @@ A root macro used to fit energy spectra saved by "exctract_OM_spectra" using sum
 Following steps describe how to run the scripts on CC-IN2P3:
 1. Install TKevent
 ~~~~
-$ git clone [https://github.com/TomasKrizak/TKEvent.git](https://github.com/TomasKrizak/TKEvent.git)
+$ git clone https://github.com/TomasKrizak/TKEvent.git
 $ cd TKEvent/RED_to_TK/
 $ source load_environment_new.sh
 $ cd ../TKEvent/
@@ -34,7 +34,7 @@ $ ./install.sh
 2. Compile exctract_OM_spectra
 ~~~~
 $ cd ../..
-$ git clone [https://github.com/konarfil/CalibrationScript.git]
+$ git clone https://github.com/konarfil/CalibrationScript.git
 $ cd build
 $ chmod 755 compile.sh
 $ ./compile.sh
