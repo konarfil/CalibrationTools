@@ -6,7 +6,7 @@ This script selects events containing Bi207 electrons using tracking algorithm a
 2. For each track, check if it meets cut conditions
 3. If the track passes all conditions, save energy
 
-Tracking is performed using algorithm developed by Tomáš Křižák (https://github.com/TomasKrizak/TKEvent). It gives us one line for each side of the tracker. From each line we can extract electrons initial vertex (at $x=0$) and its final vertex (at the front face of an OM). Positions of these vertices are than used in the cut.
+Tracking is performed using algorithm developed by Tomáš Křižák (https://github.com/TomasKrizak/TKEvent). It gives us one line for each side of the tracker. From each line we can extract electron's initial vertex (at $x=0$) and final vertex (at the front face of an OM). Positions of these vertices are than used in the cut.
 To pass the cut an electron has to meet several criteria:
 
 - initial vertex within 10 cm from a calibration source
