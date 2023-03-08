@@ -19,7 +19,7 @@ $E_0=kQ+\Delta E(kQ,d;p_1, p_2, p_3, p_4, p_5)=kQ+(p_1d+p_2)e^{p_3kQ}+p_4d+p_5$,
 
 where $\Delta E$ is a correction for energy lost by the electron while passing through the tracker. Its form as well as parameters $p_1,...,p_5$ were determined using Falaise simulation. A search for more precise correction model is in progress. Since we do not know the $k$ parameter we calculate the energy for 100 different values of $k$ and as a result save 100 spectra for each OM. From these spectra we than choose the one where the second peak is closest to 976 keV. Its $k$ parameter is the one we are looking for.
 ## fit_spectra.cpp
-This is a root macro used to fit energy spectra saved by "exctract_OM_spectra" using sum of three gaussian functions. It looks for a fit where the mean value of the first gaussian is closest to 976 keV. This fit is than saved as png image and the $k$ parameter is saved into a text file.
+This is a Root macro used to fit energy spectra saved by "exctract_OM_spectra" using sum of three gaussian functions. It looks for a fit where the mean value of the first gaussian is closest to 976 keV. This fit is than saved as png image and the $k$ parameter is saved into a text file.
 ## Usage
 Following steps describe how to run the scripts on CC-IN2P3:
 1. Clone the repository
