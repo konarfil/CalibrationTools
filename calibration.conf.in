@@ -1,0 +1,30 @@
+#@description pipeline using MNL library
+#@key_label  "name"
+#@meta_label "type"
+
+[name="flreconstruct" type="flreconstruct::section"]
+experimentalSetupURN : string = "urn:snemo:demonstrator:setup:2.0"
+
+[name="flreconstruct.variantService" type="flreconstruct::section"]
+profile : string as path = "@PROJECT_BINARY_DIR@/variant.profile" 
+
+[name="flreconstruct.plugins" type="flreconstruct::section"]
+plugins : string[1] = "CalibrationModule"
+CalibrationModule.directory : string = "@PROJECT_BINARY_DIR@"
+
+[name="pipeline" type="dpp::chain_module"]
+modules : string[1] = "Calibration"
+
+[name="Calibration" type="CalibrationModule"]
+# dimensions of ellipse for calibration source vertex cut
+source_cut_ellipse_Y : real as length = 25.0 mm
+source_cut_ellipse_Z : real as length = 30.0 mm 
+
+gas_pressure : real = 0.89 # tracking gas pressure in bars
+
+# partial pressures of tracking gas components (numbers from 0 to 1 -> should add up to 1)
+he_pressure : real as fraction = 95 % # helium
+et_pressure : real as fraction = 4 % # ethanol
+ar_pressure : real as fraction = 1 % # argon
+
+gas_temperature : real = 298.0 # tracking gas temperature in Kelvin
