@@ -5,4 +5,4 @@ cd build
 cmake ..
 make
 cd ..
-cp -f build/libCalibrationModule.so lib/
+cp -f build/libCalibrationCutsModule.so lib/
