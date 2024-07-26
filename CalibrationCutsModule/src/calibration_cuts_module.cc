@@ -85,9 +85,9 @@ void calibration_cuts_module::initialize (const datatools::properties & module_p
   // initialize ttrees to save extracted OM data into
   for(int i = 0;i < number_of_OMs_;i++)
   {
-    std::string gid = om_num_to_gid(i);
+    std::string om_num = std::to_string(i);
 
-    OM_data_[i] = new TTree(gid.c_str(), gid.c_str());
+    OM_data_[i] = new TTree(om_num.c_str(), om_num.c_str());
     OM_data_[i]->Branch("charge", &charge_);
     OM_data_[i]->Branch("source_vertex_pos", &source_vertex_pos_);
     OM_data_[i]->Branch("calo_vertex_pos", &calo_vertex_pos_);
