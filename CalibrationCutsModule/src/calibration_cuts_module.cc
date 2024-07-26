@@ -16,12 +16,11 @@ DPP_MODULE_REGISTRATION_IMPLEMENT(calibration_cuts_module, "CalibrationCutsModul
 
 calibration_cuts_module::calibration_cuts_module()
 {
-  std::cout << "calibration_cuts_module::calibration_cuts_module() called" << std::endl;
+
 }
 
 calibration_cuts_module::~calibration_cuts_module()
 {
-  std::cout << "calibration_cuts_module::~calibration_cuts_module() called" << std::endl;
   save_file_->cd();
   for(int i = 0;i < number_of_OMs_;i++)
   {
@@ -31,9 +30,8 @@ calibration_cuts_module::~calibration_cuts_module()
   delete save_file_;
 }
 
-void calibration_cuts_module::initialize (const datatools::properties & module_properties, datatools::service_manager & services, dpp::module_handle_dict_type &)
+void calibration_cuts_module::initialize (const datatools::properties & module_properties, datatools::service_manager & services, dpp::module_handle_dict_type & module_dict)
 {
-  std::cout << "calibration_cuts_module::initialize() called" << std::endl;
 
   event_counter_ = 0;
 
@@ -82,6 +80,7 @@ void calibration_cuts_module::initialize (const datatools::properties & module_p
 
   source_vertex_pos_ = TVector3();
   calo_vertex_pos_ = TVector3();
+  calo_vertex_pos_OM_ = TVector3();
 
   // initialize ttrees to save extracted OM data into
   for(int i = 0;i < number_of_OMs_;i++)
@@ -92,6 +91,7 @@ void calibration_cuts_module::initialize (const datatools::properties & module_p
     OM_data_[i]->Branch("charge", &charge_);
     OM_data_[i]->Branch("source_vertex_pos", &source_vertex_pos_);
     OM_data_[i]->Branch("calo_vertex_pos", &calo_vertex_pos_);
+    OM_data_[i]->Branch("calo_vertex_pos_OM", &calo_vertex_pos_OM_);
   }
 
   this->_set_initialized(true);
@@ -136,6 +136,7 @@ dpp::chain_module::process_status calibration_cuts_module::process (datatools::t
     datatools::handle<snemo::datamodel::vertex> source_vertex = vertex_close_to_a_calib_source(particle);
     if(!source_vertex.has_data()) // there is no vertex close to a calibration source
     {
+      far_from_source_++;
       continue;
     }
 
@@ -165,7 +166,7 @@ dpp::chain_module::process_status calibration_cuts_module::process (datatools::t
       }
     }
 
-    if(charge == -1.0) // probably should never happen
+    if(charge < charge_threshold_)
     {
       continue;
     }
@@ -181,10 +182,25 @@ dpp::chain_module::process_status calibration_cuts_module::process (datatools::t
     }
 
     int om_num = snemo::datamodel::om_num(assoc_gid);
+
+    // calculate calo vertex position in the coordiante system of the OM
+    const geomtools::mapping   & mapping = geo_manager_->get_mapping();
+    const geomtools::geom_info & a_block_ginfo  = mapping.get_geom_info(assoc_gid);
+    const geomtools::placement & a_block_world_placement = a_block_ginfo.get_world_placement();
+
+	  geomtools::placement calo_vertex_pos_OM_placement;
+    a_block_world_placement.relocate(calo_vertex_pos, calo_vertex_pos_OM_placement);
+	  geomtools::vector_3d calo_vertex_pos_OM_vec = calo_vertex_pos_OM_placement.get_translation();
+
+	  const double position_x =  (calo_vertex_pos_OM_vec.x());
+    const double position_y =  (calo_vertex_pos_OM_vec.y());
+    const double position_z = -(calo_vertex_pos_OM_vec.z());
     
+    // save extracted values
     charge_ = charge;
     source_vertex_pos_.SetXYZ(source_vertex_pos.getX(), source_vertex_pos.getY(), source_vertex_pos.getZ());
     calo_vertex_pos_.SetXYZ(calo_vertex_pos.getX(), calo_vertex_pos.getY(), calo_vertex_pos.getZ());
+    calo_vertex_pos_OM_.SetXYZ(position_y, -position_x, position_z);
 
     OM_data_[om_num]->Fill();
 	}

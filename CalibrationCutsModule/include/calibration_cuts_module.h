@@ -14,6 +14,7 @@
 #include <TTree.h>
 #include <TVector3.h>
 #include <TFile.h>
+#include <TH2F.h>
 
 // Other
 #include <string>
@@ -58,6 +59,8 @@ class calibration_cuts_module : public dpp::chain_module
 
     static constexpr double charge2nVs_ = 1e6; // multiplicative constant to transform charge to units nV*s
 
+    static constexpr double charge_threshold_ = 0.5; // minumum charge to be saved
+
     // number of calibration sources
     static const int calib_source_rows_ = 7;
     static const int calib_source_columns_ = 6;
@@ -71,12 +74,16 @@ class calibration_cuts_module : public dpp::chain_module
     double calib_source_Z_[calib_source_rows_][calib_source_columns_];
 
     // variables for saving data into TTree branches
-    float charge_;
-    TVector3 source_vertex_pos_;
-    TVector3 calo_vertex_pos_;
+    float charge_; // charge measured by the OM
+    TVector3 source_vertex_pos_; // position of the calibration source vertex
+    TVector3 calo_vertex_pos_; // position of the calorimeter vertex
+    TVector3 calo_vertex_pos_OM_; // position of the calorimeter vertex in coordinate 
+                                 // system of the OM (needed for the optical correction)
 
     // file to save extracted information into
     TFile* save_file_;
+
+    int far_from_source_ = 0;
   
     // Macro to register the module
     DPP_MODULE_REGISTRATION_INTERFACE(calibration_cuts_module);

@@ -1,0 +1,22 @@
+# A configuration file with parameters for the calibration algorithm
+# gas_pressure - total tracking gas pressure in bars
+# He_pressure - partial pressure of helium (from 0 to 1)
+# Et_pressure - partial pressure of ethanol (from 0 to 1)
+# Ar_pressure - partial pressure of argon (from 0 to 1)
+# T_gas - temperature of the tracking gas in Kelvin
+# minimization_threshold - loss function threshold to end the minimization algorithm in keV
+# max_iterations - maximum number of iterations of the minimization algorithm
+# min_hits - minimum number of detected electrons for an OM to be considered for the calibration
+
+# He_pressure + Et_pressure + Ar_pressure should be equal to 1
+# if the minimization algorithm converges in less than max_iterations then each of the two peaks
+# in the calibration spectrum is closer then sqrt(minimization_threshold) keV to the correct energy
+
+gas_pressure=0.89
+He_pressure=0.955
+Et_pressure=0.035
+Ar_pressure=0.01
+T_gas=298.0
+minimization_threshold=1.0
+max_iterations=100
+min_hits=1000
