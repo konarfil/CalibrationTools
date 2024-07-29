@@ -2,3 +2,5 @@ CalibrationCutsModule/build/
 CalibrationCutsModule/CMakeFiles/
 CalibrationCutsModule/lib/
 SNCalib/build
+Charge2EnergyModule/build
+Charge2EnergyModule/lib

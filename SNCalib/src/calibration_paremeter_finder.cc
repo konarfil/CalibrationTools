@@ -300,7 +300,7 @@ double calibration_parameter_finder::non_linearity_correction(double Ef, double 
   double Ei_prev = 1e10;
   double Ei = Ef;
   int i = 0;
-  while(abs(Ei - Ei_prev) > 0.001 && i < 20)
+  while(std::abs(Ei - Ei_prev) > 0.001 && i < 20)
   {
   	double f = 1.092096 * Ei - 1.56416*std::pow(Ei, 0.59) - Ef / geometrical_factor;
   	double df = 1.097086 - 0.9228544/std::pow(Ei, 0.41);

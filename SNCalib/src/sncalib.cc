@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     calib_param_file << om_title << ";" << best_calib.a << ";" << best_calib.b 
                      << ";" << best_calib.chi2_NDF_A << ";" << best_calib.chi2_NDF_B
                      << ";" << best_calib.loss << std::endl;
-    std::cout << om_title << " processed" << std::endl;
+    std::cout << "OM " << om_title << " processed" << std::endl;
   }
   calib_param_file.close();
   delete calib_data_file;
