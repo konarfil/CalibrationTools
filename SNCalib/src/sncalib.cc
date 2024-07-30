@@ -1,4 +1,5 @@
 #include "calibration_parameter_finder.h"
+#include "energy_correction_calculator.h"
 #include "calib_info.h"
 
 // ROOT
@@ -104,6 +105,17 @@ int main(int argc, char *argv[])
   std::map<std::string, std::string> config = read_config_file(config_file_path);
   int min_hits = std::stoi(config["min_hits"]);
 
+  // geometrical non-uniformity correction paths
+  std::string falaise_resources_path = Falaise_RESOURCE_DIR;
+  std::string pol3d_parameters_mwall_8inch_path = falaise_resources_path + "/snemo/demonstrator/reconstruction/db/fit_parameters_10D_MW_8inch.db";
+  std::string pol3d_parameters_mwall_5inch_path = falaise_resources_path + "/snemo/demonstrator/reconstruction/db/fit_parameters_10D_MW_5inch.db";
+  std::string pol3d_parameters_xwall_path = falaise_resources_path + "/snemo/demonstrator/reconstruction/db/fit_parameters_10D_XW.db";
+
+  energy_correction_calculator* corr_calculator = new energy_correction_calculator(std::stod(config["gas_pressure"]), std::stod(config["He_pressure"]),
+                                                      std::stod(config["Et_pressure"]), std::stod(config["Ar_pressure"]),
+                                                      std::stod(config["T_gas"]), pol3d_parameters_mwall_8inch_path,
+                                                      pol3d_parameters_mwall_5inch_path, pol3d_parameters_xwall_path);
+
   TFile* calib_data_file = new TFile(input_file_path.c_str());
   std::ofstream calib_param_file;
   calib_param_file.open (output_file_path);
@@ -117,10 +129,8 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    calibration_parameter_finder finder = calibration_parameter_finder(OM_data, std::stod(config["gas_pressure"]), std::stod(config["He_pressure"]),
-                                                                       std::stod(config["Et_pressure"]), std::stod(config["Ar_pressure"]), std::stod(config["T_gas"]),
-                                                                       std::stod(config["minimization_threshold"]), std::stoi(config["max_iterations"]),
-                                                                       save_fitted_spectra);
+    calibration_parameter_finder finder = calibration_parameter_finder(OM_data, std::stod(config["minimization_threshold"]), 
+                                                                       std::stoi(config["max_iterations"]), save_fitted_spectra, corr_calculator);
     calib_info best_calib = finder.find_calibration_parameters();
 
     calib_param_file << om_title << ";" << best_calib.a << ";" << best_calib.b 
@@ -130,6 +140,7 @@ int main(int argc, char *argv[])
   }
   calib_param_file.close();
   delete calib_data_file;
+  delete corr_calculator;
 
   return 0;
 }

@@ -6,7 +6,7 @@ find_package(ROOT    REQUIRED)
 add_library(CalibrationCutsModule SHARED "src/calibration_cuts_module.cc" )
 target_include_directories(CalibrationCutsModule PUBLIC "include")
 
-target_link_libraries(CalibrationCutsModule PUBLIC Falaise::Falaise ${ROOT_LIBRARIES})  
+target_link_libraries(CalibrationCutsModule PUBLIC Falaise::Falaise)  
 
 install(TARGETS CalibrationCutsModule DESTINATION ${CMAKE_INSTALL_PLUGINDIR})
 

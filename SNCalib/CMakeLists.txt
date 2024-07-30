@@ -12,6 +12,6 @@ target_include_directories(sncalib PUBLIC "${PROJECT_SOURCE_DIR}/include")
 
 target_sources(sncalib PRIVATE src/calibration_paremeter_finder.cc)
 
-target_link_libraries(sncalib PUBLIC Falaise::Falaise ${ROOT_LIBRARIES})
+target_link_libraries(sncalib PUBLIC Falaise::Falaise ${ROOT_LIBRARIES} EnergyCorrectionCalculator)
 
 configure_file("params.conf.in" "params.conf" @ONLY)

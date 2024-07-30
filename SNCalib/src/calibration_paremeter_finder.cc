@@ -14,14 +14,16 @@
 #include <numeric>
 
 // Constructor
-calibration_parameter_finder::calibration_parameter_finder(TTree* OM_data, double gas_pressure, double He_pressure, double Et_pressure, double Ar_pressure, 
-                                                           double T_gas, double minimization_threshold, int max_iterations, bool save_fitted_spectra)
+calibration_parameter_finder::calibration_parameter_finder(TTree* OM_data, double minimization_threshold, int max_iterations,
+                                                           bool save_fitted_spectra, energy_correction_calculator* corr_calculator)
 {
   minimization_threshold_ = minimization_threshold;
   max_iterations_ = max_iterations;
   save_fitted_spectra_ = save_fitted_spectra;
   fitted_spectra_dir_ = FITTED_SPECTRA_DIR;
   best_calib_ = calib_info{0.0, 0.0, 0.0, 0.0, 1e9};
+
+  corr_calculator_ = corr_calculator;
 
   // set branch addresses
   OM_data_ = OM_data;
@@ -32,44 +34,6 @@ calibration_parameter_finder::calibration_parameter_finder(TTree* OM_data, doubl
   OM_data_->SetBranchAddress("source_vertex_pos", &source_vertex_pos_);
   OM_data_->SetBranchAddress("calo_vertex_pos", &calo_vertex_pos_);
   OM_data_->SetBranchAddress("calo_vertex_pos_OM", &calo_vertex_pos_OM_);
-
-  // calculate mass fractions of gas components
-  double frac_He = (He_pressure * Ar_He_) / (He_pressure * Ar_He_ + Et_pressure * Ar_Et_ + Ar_pressure * Ar_Ar_);
-  double frac_Et = (Et_pressure * Ar_Et_) / (He_pressure * Ar_He_ + Et_pressure * Ar_Et_ + Ar_pressure * Ar_Ar_);
-  double frac_Ar = (Ar_pressure * Ar_Ar_) / (He_pressure * Ar_He_ + Et_pressure * Ar_Et_ + Ar_pressure * Ar_Ar_);
-  double frac_C  = (frac_Et * 2 * Ar_C_) / (2*Ar_C_ + 6*Ar_H_ + Ar_O_);
-  double frac_O  = (frac_Et * Ar_O_) / (2*Ar_C_ + 6*Ar_H_ + Ar_O_);
-  double frac_H  = (frac_Et * 6 * Ar_H_) / (2*Ar_C_ + 6*Ar_H_ + Ar_O_);
-
-  // calculate Z/A ratio of the tracking gas
-  Z_A_gas_ = (frac_He * Z_He_) / Ar_He_ + (frac_H * Z_H_) / Ar_H_ 
-            + (frac_C * Z_C_) / Ar_C_ + (frac_O * Z_O_) / Ar_O_ + (frac_Ar * Z_Ar_) / Ar_Ar_;
-
-  // calculate mean ionization energy of the tracking gas
-  I_gas_ = std::exp(((frac_He * Z_He_ * std::log(I_He_)) / Ar_He_ 
-                   + (frac_H * Z_H_ * std::log(I_H_)) / Ar_H_
-                   + (frac_C * Z_C_ * std::log(I_C_)) / Ar_C_ 
-                   + (frac_O * Z_O_ * std::log(I_O_)) / Ar_O_ 
-                   + (frac_Ar * Z_Ar_ * std::log(I_Ar_)) / Ar_Ar_) / Z_A_gas_);
-
-  // calculate molar mas of the tracking gas
-  double Mm_gas = He_pressure * Ar_He_ + Et_pressure * Ar_Et_ + Ar_pressure * Ar_Ar_;
-
-  // calculate density of the tracking gas (g/cm^3)
-  rho_gas_ = Mm_gas / (8.31 * T_gas) * gas_pressure * 0.1;
-
-  std::string falaise_resources_path = Falaise_RESOURCE_DIR;
-  // Initialize the pol3d parameters for MWall 8"
-  std::string pol3d_parameters_mwall_8inch_path = falaise_resources_path + "/snemo/demonstrator/reconstruction/db/fit_parameters_10D_MW_8inch.db";
-  uniformity_correction_parameters_mwall_8inch_ = this->parse_pol3d_parameters(pol3d_parameters_mwall_8inch_path);
-
-  // Initialize the pol3d parameters for MWall 5"
-  std::string pol3d_parameters_mwall_5inch_path = falaise_resources_path + "/snemo/demonstrator/reconstruction/db/fit_parameters_10D_MW_5inch.db";
-  uniformity_correction_parameters_mwall_5inch_ = this->parse_pol3d_parameters(pol3d_parameters_mwall_5inch_path);
-
-  // Initialize the pol3d parameters for XWall
-  std::string pol3d_parameters_xwall_path = falaise_resources_path + "/snemo/demonstrator/reconstruction/db/fit_parameters_10D_XW.db";
-  uniformity_correction_parameters_xwall_ = this->parse_pol3d_parameters(pol3d_parameters_xwall_path);
 }
 
 // Destructor
@@ -266,51 +230,6 @@ double calibration_parameter_finder::tripleGaussB(double* x,  double* par)
   return PDF;
 }
 
-// parse parameters for the non-uniformity correction
-std::vector<double> calibration_parameter_finder::parse_pol3d_parameters(const std::string & parameters_path)
-{
-  std::ifstream parameters_file(parameters_path.c_str());
-
-  double par, par_err;
-  std::vector<double> parameters;
-
-  while(parameters_file >> par >> par_err)
-    parameters.push_back(par);
-
-  return parameters;
-}
-
-// calculate energy losses in material using the Bethe-Bloch formula for electrons
-double calibration_parameter_finder::Bethe_Bloch_loss(double d, double E, double Z_A, double I, double RHO)
-{
-  double C = 307.075 / 2.0;
-  
-  double beta2 = (2.0 * E_0_ * E + E * E) / ((E_0_ + E) * (E_0_ + E));
-  double stopping_power = C * Z_A / beta2 * (TMath::Log((E_0_ * beta2 * E) / (2.0 * I * I * (1.0 - beta2))) 
-  			- (2.0 * sqrt(1.0 - beta2) - 1.0 + beta2) * TMath::Log(2.0) + 1.0 - beta2 + 1.0 / 8.0 * (1.0 - sqrt(1.0 - beta2)) * (1.0 - sqrt(1.0 - beta2)));
-  double delta_E = stopping_power * RHO * d * 1e-1;
-  
-  return delta_E;
-}
-
-// based on observed energy and geometrical correction factor 
-// calculates energy corrected by the non-linearity effects
-double calibration_parameter_finder::non_linearity_correction(double Ef, double geometrical_factor)
-{
-  double Ei_prev = 1e10;
-  double Ei = Ef;
-  int i = 0;
-  while(std::abs(Ei - Ei_prev) > 0.001 && i < 20)
-  {
-  	double f = 1.092096 * Ei - 1.56416*std::pow(Ei, 0.59) - Ef / geometrical_factor;
-  	double df = 1.097086 - 0.9228544/std::pow(Ei, 0.41);
-  	Ei_prev = Ei;
-  	Ei = Ei - f/df;
-  	i++;
-  }
-  return Ei;
-}
-
 double calibration_parameter_finder::loss_function(double a, double b)
 {
   TH1F histo = TH1F("histo", "histo", 2000, -8000.0, 12000.0);
@@ -322,36 +241,20 @@ double calibration_parameter_finder::loss_function(double a, double b)
   {
     OM_data_->GetEntry(i);
 
+    std::string gid_str = OM_data_->GetName();
+    int OM_type = std::stoi(gid_str.substr(0, 4));
+
     // observed energy
   	double Ef = a * charge_ + b;
 
-    // determine the factor for geometrical non-uniformity correction
-    double position_xyz[3] = {calo_vertex_pos_OM_->X(), calo_vertex_pos_OM_->Y(), calo_vertex_pos_OM_->Z()};
-	  double geometrical_factor = 1.0;
-    std::string gid_str = OM_data_->GetName();
-    int OM_type = std::stoi(gid_str.substr(0, 4));
-	  switch (OM_type)
-	  {
-      case 1302: // M-wall
-        position_xyz[2] += 15.50000001; // add half height of scintillator
-        if (std::abs(calo_vertex_pos_OM_->Z()) < 1500.)
-          geometrical_factor = snemo::processing::pol3d(position_xyz, &uniformity_correction_parameters_mwall_8inch_[0]);
-        else
-          geometrical_factor = snemo::processing::pol3d(position_xyz, &uniformity_correction_parameters_mwall_5inch_[0]);
-        break;
-
-      case 1232: // X-wall
-        position_xyz[2] += 75.10000001; // add half height of scintillator
-        geometrical_factor = snemo::processing::pol3d(position_xyz, &uniformity_correction_parameters_xwall_[0]);
-        break;
-	  }
-
-    // distances passed through gas, Mylar and nylon
+    // distance passed in gas
   	double dist_gas   = std::sqrt((calo_vertex_pos_->X() - source_vertex_pos_->X())*(calo_vertex_pos_->X() - source_vertex_pos_->X())
                                 + (calo_vertex_pos_->Y() - source_vertex_pos_->Y())*(calo_vertex_pos_->Y() - source_vertex_pos_->Y())
                                 + (calo_vertex_pos_->Z() - source_vertex_pos_->Z())*(calo_vertex_pos_->Z() - source_vertex_pos_->Z()));
 
-    double Ef_optical = non_linearity_correction(Ef, geometrical_factor); // apply optical correction
+    // apply optical correction
+    double geometrical_factor = corr_calculator_->geometrical_factor(calo_vertex_pos_OM_->X(), calo_vertex_pos_OM_->Y(), calo_vertex_pos_OM_->Z(), OM_type);
+    double Ef_optical = corr_calculator_->non_linearity_correction(Ef, geometrical_factor);
     double E;
     if(OM_type == 1302) // main wall
     {
@@ -363,9 +266,9 @@ double calibration_parameter_finder::loss_function(double a, double b)
       double dist_nylon = one_over_cos * nylon_thickness_;
 
       // apply energy loss correction
-      double E_mylar = Ef_optical + Bethe_Bloch_loss(dist_mylar, Ef_optical, Z_A_mylar_, I_mylar_, rho_mylar_);
-    	double E_nylon = E_mylar + Bethe_Bloch_loss(dist_nylon, E_mylar, Z_A_nylon_, I_nylon_, rho_nylon_);
-    	E = E_nylon + Bethe_Bloch_loss(dist_gas, E_nylon, Z_A_gas_, I_gas_, rho_gas_);
+      double E_mylar = Ef_optical + corr_calculator_->Bethe_Bloch_loss(dist_mylar, Ef_optical, energy_correction_calculator::material::mylar);
+    	double E_nylon = E_mylar + corr_calculator_->Bethe_Bloch_loss(dist_nylon, E_mylar, energy_correction_calculator::material::nylon);
+    	E = E_nylon + corr_calculator_->Bethe_Bloch_loss(dist_gas, E_nylon, energy_correction_calculator::material::gas);
     }
     else // xcalo
     {
@@ -376,8 +279,8 @@ double calibration_parameter_finder::loss_function(double a, double b)
       double dist_mylar = one_over_cos * mylar_thickness_;
 
       // apply energy loss correction (there is no nylon on xwall)
-      double E_mylar = Ef_optical + Bethe_Bloch_loss(dist_mylar, Ef_optical, Z_A_mylar_, I_mylar_, rho_mylar_);
-    	E = E_mylar + Bethe_Bloch_loss(dist_gas, E_mylar, Z_A_gas_, I_gas_, rho_gas_);
+      double E_mylar = Ef_optical + corr_calculator_->Bethe_Bloch_loss(dist_mylar, Ef_optical, energy_correction_calculator::material::mylar);
+    	E = E_mylar + corr_calculator_->Bethe_Bloch_loss(dist_gas, E_mylar, energy_correction_calculator::material::gas);
     }
 
   	histo.Fill(E);
