@@ -1,0 +1,6 @@
+add_library(EnergyCorrectionCalculator SHARED src/energy_correction_calculator.cc)
+
+find_package(Falaise REQUIRED)
+
+target_include_directories(EnergyCorrectionCalculator PUBLIC include)
+target_link_libraries(EnergyCorrectionCalculator PUBLIC Falaise::Falaise)  
