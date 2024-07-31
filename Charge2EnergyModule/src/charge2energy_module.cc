@@ -315,6 +315,14 @@ void charge2energy_module::calibrate_isolated_calo_hit(const snemo::datamodel::p
   if(calibration_params_[om_num].size() == 0.0 || !std::isnan(cd_calo_hit.get_energy()) || charge < 0.0)
     return;
 
+  // energy without energy corrections
   double Ef = calibration_params_[om_num][0] * charge + calibration_params_[om_num][1];
+
+  // energy with Birks and Cherenkov correction
+  double Ef_bc = corr_calculator_->non_linearity_correction(Ef, 1.0);
+
   cd_calo_hit.set_energy(Ef * CLHEP::keV);
+
+  cd_calo_hit.grab_auxiliaries().store_with_explicit_unit("Ef", Ef * CLHEP::keV, "Energy without corrections");
+  cd_calo_hit.grab_auxiliaries().store_with_explicit_unit("Ef_bc", Ef_bc * CLHEP::keV, "Energy with Birks and Cherenkov corrections");
 }
