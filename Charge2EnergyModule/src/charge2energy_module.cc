@@ -189,9 +189,12 @@ void charge2energy_module::parse_calibration_params(std::string database_path, s
     std::string token;
     std::vector<double> values;
 
+    if (line[0] == '#')
+	      continue;
+
     while (std::getline(stream, token, ';'))
     {
-        values.push_back(std::stod(token));
+      values.push_back(std::stod(token));
     }
 
     int om_num = static_cast<int>(values[0]);

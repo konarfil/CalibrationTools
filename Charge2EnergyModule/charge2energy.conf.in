@@ -24,4 +24,4 @@ Ar_pressure : real = 0.01 # argon
 
 T_gas : real = 298.0 # tracking gas temperature in Kelvin
 
-calibration_path : string = "/sps/nemo/scratch/fkonarik/calibration_module_development/CalibrationScript/SNCalib/build/calibration_params.txt" # path to a file with calibration parameters
+calibration_path : string = "calibration_params.txt" # path to a file with calibration parameters
