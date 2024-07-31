@@ -16,13 +16,13 @@ DPP_MODULE_REGISTRATION_IMPLEMENT(calibration_cuts_module, "CalibrationCutsModul
 
 calibration_cuts_module::calibration_cuts_module()
 {
-
+  
 }
 
 calibration_cuts_module::~calibration_cuts_module()
 {
   save_file_->cd();
-  for(int i = 0;i < number_of_OMs_;i++)
+  for(int i = 0;i < number_of_OMs_no_gveto_;i++)
   {
     OM_data_[i]->Write();
     delete OM_data_[i];
@@ -32,10 +32,20 @@ calibration_cuts_module::~calibration_cuts_module()
 
 void calibration_cuts_module::initialize (const datatools::properties & module_properties, datatools::service_manager & services, dpp::module_handle_dict_type & module_dict)
 {
-
   event_counter_ = 0;
 
   geo_manager_ = snemo::service_handle<snemo::geometry_svc>{services};
+
+  // read logging priority from the conf file
+  if(module_properties.has_key("logging.priority"))
+  {
+    datatools::logger::priority prio = datatools::logger::get_priority(module_properties.fetch_string("logging.priority"));
+    set_logging_priority(prio);
+  }
+  else
+  {
+    set_logging_priority(datatools::logger::priority::PRIO_FATAL);
+  }
 
   // read calibration source cut parameters from conf file
   if(module_properties.has_key("source_cut_ellipse_Y"))
@@ -83,7 +93,7 @@ void calibration_cuts_module::initialize (const datatools::properties & module_p
   calo_vertex_pos_OM_ = TVector3();
 
   // initialize ttrees to save extracted OM data into
-  for(int i = 0;i < number_of_OMs_;i++)
+  for(int i = 0;i < number_of_OMs_no_gveto_;i++)
   {
     std::string om_num = std::to_string(i);
 
@@ -101,27 +111,27 @@ dpp::chain_module::process_status calibration_cuts_module::process (datatools::t
 {
   if(event_counter_ % 10000 == 0)
   {
-    std::cout << "Event no. " << event_counter_ << " processed" << std::endl;
+    DT_LOG_INFORMATION(get_logging_priority(), "Event no. " + std::to_string(event_counter_) + " processed");
   }
 
   // Skip processing if PTD bank is not present
   if (!event.has("PTD"))
   {
-    std::cout << "======== no PTD bank in event " << event_counter_++ << " ========" << std::endl;
+    DT_LOG_WARNING(get_logging_priority(), "======== no PTD bank in event " + std::to_string(event_counter_++) + " ========");
     return dpp::base_module::PROCESS_SUCCESS;
   }
 
   // Skip processing if pCD bank is not present
   if (!event.has("pCD"))
   {
-    std::cout << "======== no pCD bank in event " << event_counter_++ << " ========" << std::endl;
+    DT_LOG_WARNING(get_logging_priority(), "======== no pCD bank in event " + std::to_string(event_counter_++) + " ========");
     return dpp::base_module::PROCESS_SUCCESS;
   }
 
   // Skip processing if TTD bank is not present
   if (!event.has("TTD"))
   {
-    std::cout << "======== no TTD bank in event " << event_counter_++ << " ========" << std::endl;
+    DT_LOG_WARNING(get_logging_priority(), "======== no TTD bank in event " + std::to_string(event_counter_++) + " ========");
     return dpp::base_module::PROCESS_SUCCESS;
   }
 
@@ -136,7 +146,6 @@ dpp::chain_module::process_status calibration_cuts_module::process (datatools::t
     datatools::handle<snemo::datamodel::vertex> source_vertex = vertex_close_to_a_calib_source(particle);
     if(!source_vertex.has_data()) // there is no vertex close to a calibration source
     {
-      far_from_source_++;
       continue;
     }
 
@@ -254,57 +263,4 @@ datatools::handle<snemo::datamodel::vertex> calibration_cuts_module::track_has_o
     }
   }
   return datatools::handle<snemo::datamodel::vertex>(nullptr);
-}
-
-
-// based on OM number return a string with GID
-std::string calibration_cuts_module::om_num_to_gid(int om_num)
-{
-  if(om_num < 520) // main wall
-  {
-    int type, module_num, side, column, row;
-
-    type = 1302;
-    module_num = 0;
-
-    if(om_num < 260) // main wall Italy
-    {
-      side = 0;
-      column = (om_num / 13);
-      row = om_num % 13;
-    }
-    else // main wall France
-    {
-      side = 1;
-      column = (om_num-260) / 13;
-      row = om_num % 13;
-    }
-    return (std::to_string(type) + ":" 
-            + std::to_string(module_num) + "." 
-            + std::to_string(side) + "." 
-            + std::to_string(column) + "." 
-            + std::to_string(row));
-  }
-  else if(om_num < 648) // xcalo
-  {
-    int type, module_num, side, wall, column, row;
-
-    type = 1232;
-    module_num = 0;
-    side = (om_num < 584) ? 0 : 1;
-    wall = (om_num-520-side*64)/32;
-    column = (om_num-520-side*64-wall*32)/16;
-    row = om_num % 16;
-
-    return (std::to_string(type) + ":" 
-            + std::to_string(module_num) + "." 
-            + std::to_string(side) + "." 
-            + std::to_string(wall) + "." 
-            + std::to_string(column) + "." 
-            + std::to_string(row));
-  }
-  else
-  {
-    return "";
-  }
 }

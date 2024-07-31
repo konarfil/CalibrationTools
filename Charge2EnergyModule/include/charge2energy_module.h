@@ -50,7 +50,7 @@ class charge2energy_module : public dpp::chain_module
 
     snemo::service_handle<snemo::geometry_svc> geo_manager_{};
 
-    static const int number_of_OMs_ = 712; // total number of OMs in SuperNEMO without gveto
+    static const int number_of_OMs_ = 712; // total number of OMs in SuperNEMO
     static constexpr double charge2nVs_ = 1e6; // multiplicative constant to transform charge to units nV*s
 
     // thicknesses of material layers in mm

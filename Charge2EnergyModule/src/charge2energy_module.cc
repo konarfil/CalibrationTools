@@ -34,15 +34,27 @@ void charge2energy_module::initialize (const datatools::properties & module_prop
   event_counter_ = 0;
   geo_manager_ = snemo::service_handle<snemo::geometry_svc>{services};
 
-  // read parameters for energy loss correction from the conf file
   double gas_pressure, He_pressure, Et_pressure, Ar_pressure, T_gas;
   std::string calibration_path;
 
+  // read logging priority from the conf file
+  if(module_properties.has_key("logging.priority"))
+  {
+    datatools::logger::priority prio = datatools::logger::get_priority(module_properties.fetch_string("logging.priority"));
+    set_logging_priority(prio);
+  }
+  else
+  {
+    set_logging_priority(datatools::logger::priority::PRIO_FATAL);
+  }
+
+   // read calibration parameter text file path from the conf file
   if(module_properties.has_key("calibration_path"))
     calibration_path = module_properties.fetch_string("calibration_path");
   else
     DT_THROW(std::runtime_error, "Missing calibration parameter file path !");
 
+  // read gas properties from the conf file
   if(module_properties.has_key("gas_pressure"))
     gas_pressure = module_properties.fetch_real("gas_pressure");
   else
@@ -67,6 +79,9 @@ void charge2energy_module::initialize (const datatools::properties & module_prop
     T_gas = module_properties.fetch_real("T_gas");
   else
     T_gas = 298.0;
+
+  if(std::abs(He_pressure + Et_pressure + Ar_pressure - 1.0) > 0.000001)
+    DT_LOG_WARNING(get_logging_priority(), "Tracking gas partial pressures do not add up to 1");
 
   // Initialize the pol3d parameters for MWall 8"
   std::string pol3d_parameters_mwall_8inch_path = "@falaise:snemo/demonstrator/reconstruction/db/fit_parameters_10D_MW_8inch.db";
@@ -108,20 +123,20 @@ dpp::chain_module::process_status charge2energy_module::process (datatools::thin
 {
   if(event_counter_ % 10000 == 0)
   {
-    std::cout << "Event no. " << event_counter_ << " processed" << std::endl;
+    DT_LOG_INFORMATION(get_logging_priority(), "Event no. " + std::to_string(event_counter_) + " processed");
   }
 
   // Skip processing if pCD bank is not present
   if (!event.has("pCD"))
   {
-    std::cout << "======== no pCD bank in event " << event_counter_++ << " ========" << std::endl;
+    DT_LOG_WARNING(get_logging_priority(), "======== no pCD bank in event " + std::to_string(event_counter_++) + " ========");
     return dpp::base_module::PROCESS_SUCCESS;
   }
 
   // Skip processing if PTD bank is not present
   if (!event.has("PTD"))
   {
-    std::cout << "======== no PTD bank in event " << event_counter_++ << " ========" << std::endl;
+    DT_LOG_WARNING(get_logging_priority(), "======== no PTD bank in event " + std::to_string(event_counter_++) + " ========");
     return dpp::base_module::PROCESS_SUCCESS;
   }
 
@@ -129,7 +144,7 @@ dpp::chain_module::process_status charge2energy_module::process (datatools::thin
   // CD must be present to have track-calo hit association
   if (!event.has("CD"))
   {
-    std::cout << "======== no CD bank in event " << event_counter_++ << " ========" << std::endl;
+    DT_LOG_WARNING(get_logging_priority(), "======== no CD bank in event " + std::to_string(event_counter_++) + " ========");
     return dpp::base_module::PROCESS_SUCCESS;
   }
 
@@ -161,8 +176,10 @@ dpp::chain_module::process_status charge2energy_module::process (datatools::thin
 void charge2energy_module::parse_calibration_params(std::string database_path, std::vector<std::vector<double>> & params)
 {
   std::ifstream database_file (database_path.c_str());
+  if(!database_file.is_open())
+    DT_THROW(std::runtime_error, "Could not open calibration parameter file !");
 
-  int nb_entries = 0;
+  int N_entries = 0;
 
   std::string line;
 
@@ -180,7 +197,10 @@ void charge2energy_module::parse_calibration_params(std::string database_path, s
     int om_num = static_cast<int>(values[0]);
 
     params[om_num] = {values[1], values[2]};
+    N_entries++;
   }
+  if(N_entries != number_of_OMs_)
+    DT_LOG_WARNING(get_logging_priority(), "OMs without calibration parameters will be skipped in energy calculation");
 }
 
 // calculate energy for calo hit with associated track

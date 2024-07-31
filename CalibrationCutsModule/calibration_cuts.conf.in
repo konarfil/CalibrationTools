@@ -16,6 +16,8 @@ CalibrationCutsModule.directory : string = "@PROJECT_BINARY_DIR@"
 modules : string[1] = "Calibration"
 
 [name="Calibration" type="CalibrationCutsModule"]
+logging.priority : string = "information"
+
 # dimensions of ellipse for calibration source vertex cut
 source_cut_ellipse_Y : real as length = 25.0 mm
 source_cut_ellipse_Z : real as length = 30.0 mm 

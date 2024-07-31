@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
   std::string output_file_path = "";
   std::string config_file_path = "";
   bool save_fitted_spectra = false;
+  bool verbose = false;
 
   for (int iarg=1; iarg<argc; ++iarg)
   {
@@ -53,7 +54,6 @@ int main(int argc, char *argv[])
       {
         input_file_path = std::string(argv[++iarg]);
       }
-
       else if (arg=="-h" || arg=="--help")
       {
         std::cout << "-h [--help]\tprint help messenge" << std::endl;
@@ -61,22 +61,24 @@ int main(int argc, char *argv[])
         std::cout << "-o [--output]\toutput csv file to save calibration parameters into" << std::endl;
         std::cout << "-p [--config]\tconfiguration file with parameters of the calibration algorithm" << std::endl;
         std::cout << "-s [--spectra]\tflag to save fitted spectra as png files" << std::endl;
+        std::cout << "-V [--verbose]\tflag to print number of processed OM" << std::endl;
         return 0;
       }
-
       else if (arg=="-o" || arg=="--output")
       {
         output_file_path = std::string(argv[++iarg]);
       }
-
       else if (arg=="-p" || arg=="--config")
       {
         config_file_path = std::string(argv[++iarg]);
       }
-
       else if (arg=="-s" || arg=="--spectra")
       {
         save_fitted_spectra = true;
+      }
+      else if (arg=="-V" || arg=="--verbose")
+      {
+        verbose = true;
       }
       else
       {
@@ -104,6 +106,7 @@ int main(int argc, char *argv[])
   }
   std::map<std::string, std::string> config = read_config_file(config_file_path);
   int min_hits = std::stoi(config["min_hits"]);
+  double minimization_threshold = std::stod(config["minimization_threshold"]);
 
   // geometrical non-uniformity correction paths
   std::string falaise_resources_path = Falaise_RESOURCE_DIR;
@@ -119,6 +122,7 @@ int main(int argc, char *argv[])
   TFile* calib_data_file = new TFile(input_file_path.c_str());
   std::ofstream calib_param_file;
   calib_param_file.open (output_file_path);
+  calib_param_file << "#OM_number;a;b;chi2_A;chi2_B;loss" << std::endl;
   for(auto keyObj : *calib_data_file->GetListOfKeys())
   {
     TKey* key = (TKey*)keyObj;
@@ -136,7 +140,10 @@ int main(int argc, char *argv[])
     calib_param_file << om_title << ";" << best_calib.a << ";" << best_calib.b 
                      << ";" << best_calib.chi2_NDF_A << ";" << best_calib.chi2_NDF_B
                      << ";" << best_calib.loss << std::endl;
-    std::cout << "OM " << om_title << " processed" << std::endl;
+
+    if(verbose) std::cout << "OM " << om_title << " processed" << std::endl;
+    if(best_calib.loss > minimization_threshold)
+      std::cout << "Warning: OM " << om_title << " did not converge. Lowest loss function value found (" << best_calib.loss << ") is higher than chosen threshold (" << minimization_threshold << ")" << std::endl;
   }
   calib_param_file.close();
   delete calib_data_file;

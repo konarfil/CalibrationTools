@@ -9,6 +9,7 @@
 // Bayeux
 #include <bayeux/dpp/chain_module.h>
 #include <geomtools/manager.h>
+#include <datatools/logger.h>
 
 // ROOT
 #include <TTree.h>
@@ -46,16 +47,13 @@ class calibration_cuts_module : public dpp::chain_module
     // check if the particle track has a vertex near a calibration source - if so, return the vertex
     datatools::handle<snemo::datamodel::vertex> vertex_close_to_a_calib_source(const datatools::handle<snemo::datamodel::particle_track> & particle);
 
-    // based on OM number return a string with GID
-    std::string om_num_to_gid(int om_num);
-
     std::string output_path_; // path of a file to save extracted information into
 
     int event_counter_;
     snemo::service_handle<snemo::geometry_svc> geo_manager_{};
 
-    static const int number_of_OMs_ = 648; // total number of OMs in SuperNEMO without gveto
-    TTree* OM_data_[number_of_OMs_]; // an array of TTrees to save calibration information into
+    static const int number_of_OMs_no_gveto_ = 648; // total number of OMs in SuperNEMO without gveto
+    TTree* OM_data_[number_of_OMs_no_gveto_]; // an array of TTrees to save calibration information into
 
     static constexpr double charge2nVs_ = 1e6; // multiplicative constant to transform charge to units nV*s
 
@@ -78,12 +76,10 @@ class calibration_cuts_module : public dpp::chain_module
     TVector3 source_vertex_pos_; // position of the calibration source vertex
     TVector3 calo_vertex_pos_; // position of the calorimeter vertex
     TVector3 calo_vertex_pos_OM_; // position of the calorimeter vertex in coordinate 
-                                 // system of the OM (needed for the optical correction)
+                                  // system of the OM (needed for the optical correction)
 
     // file to save extracted information into
     TFile* save_file_;
-
-    int far_from_source_ = 0;
   
     // Macro to register the module
     DPP_MODULE_REGISTRATION_INTERFACE(calibration_cuts_module);
