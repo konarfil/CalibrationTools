@@ -1,7 +1,14 @@
 # CalibrationScript
  The repository contains tools for energy calibration of the SuperNEMO detector. The calibration procedure is divided into three parts: Falaise modules CalibrationCutsModule and Charge2EnergyModule, and command line application sncalib. CalibrationCutsModule and sncalib are used to calculate calibration parameters based on measured calibration data, while Charge2EnergyModule uses the calibration parameters to transform measured charge into energy and save it into the CD bank. The repository also contains the EnergyCorrectionCalculator class which implements both optical correction and energy loss correction. These corrections are then considered in the energy calibration. For details about energy corrections and the whole calibration process see my master thesis at docDB #5933.
 
-## Instalation
+## Instalation (CC-IN2P3)
+First load the current Falaise enviroment. An the time of writing this README, it is done by the following commands.
+```
+source /sps/nemo/sw/snswmgr/snswmgr.conf
+snswmgr_load_setup falaise@5.1.2
+```
+
+With loaded enviroment the calibration tools are installed by running this set of commands:
 
 ```
 git clone https://github.com/konarfil/CalibrationScript.git
