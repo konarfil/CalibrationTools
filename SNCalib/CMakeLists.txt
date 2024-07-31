@@ -4,7 +4,7 @@ find_package(Falaise REQUIRED)
 find_package(ROOT    REQUIRED)
 
 add_compile_definitions(Falaise_RESOURCE_DIR="${Falaise_RESOURCE_DIR}")
-add_compile_definitions(FITTED_SPECTRA_DIR="${PROJECT_SOURCE_DIR}/build/Fits")
+add_compile_definitions(FITTED_SPECTRA_DIR="${PROJECT_SOURCE_DIR}/Fits")
 
 add_executable(sncalib src/sncalib.cc)
 

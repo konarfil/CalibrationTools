@@ -279,7 +279,8 @@ void charge2energy_module::calibrate_associated_calo_hit(const snemo::datamodel:
   }
 
   // we only apply energy loss correction if there is a vertex on reference source plane
-  if(source_vertex.has_data())
+  // we also skip kinked tracks - to be implemented in the future
+  if(source_vertex.has_data() && particle_track.get_trajectory_handle()->get_pattern().number_of_kinks() == 0)
   {
     const geomtools::vector_3d & source_vertex_pos = source_vertex->get_spot().get_placement().get_translation();
     double dist_gas = std::sqrt((calo_vertex_pos.getX() - source_vertex_pos.getX())*(calo_vertex_pos.getX() - source_vertex_pos.getX())

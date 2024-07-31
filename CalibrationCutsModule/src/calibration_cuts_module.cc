@@ -128,17 +128,9 @@ dpp::chain_module::process_status calibration_cuts_module::process (datatools::t
     return dpp::base_module::PROCESS_SUCCESS;
   }
 
-  // Skip processing if TTD bank is not present
-  if (!event.has("TTD"))
-  {
-    DT_LOG_WARNING(get_logging_priority(), "======== no TTD bank in event " + std::to_string(event_counter_++) + " ========");
-    return dpp::base_module::PROCESS_SUCCESS;
-  }
-
   // Retrieve data banks
   const snemo::datamodel::particle_track_data & PTD = event.get<snemo::datamodel::particle_track_data>("PTD");
   const snemo::datamodel::precalibrated_data & pCD = event.get<snemo::datamodel::precalibrated_data>("pCD");
-  const snemo::datamodel::tracker_trajectory_data & TTD = event.get<snemo::datamodel::tracker_trajectory_data>("TTD");
 
   // iterate through all particles and find those coming from a calibration source and hitting an OM
   for (const datatools::handle<snemo::datamodel::particle_track> & particle : PTD.particles())
@@ -158,7 +150,7 @@ dpp::chain_module::process_status calibration_cuts_module::process (datatools::t
     // we only take tracks without kinks
     // in the future kinks could be included but it would require modification of the energy loss calculation
     // (add all track points to OM_data and calculate losses for individual segments)
-    if(TTD.get_default_solution().get_trajectories()[particle->get_track_id()]->get_pattern().number_of_kinks() != 0)
+    if(particle->get_trajectory_handle()->get_pattern().number_of_kinks() != 0)
     {
       continue;
     }

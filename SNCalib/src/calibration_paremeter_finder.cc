@@ -241,8 +241,14 @@ double calibration_parameter_finder::loss_function(double a, double b)
   {
     OM_data_->GetEntry(i);
 
-    std::string gid_str = OM_data_->GetName();
-    int OM_type = std::stoi(gid_str.substr(0, 4));
+    std::string om_num_str = OM_data_->GetName();
+    int om_num = std::stoi(om_num_str);
+    int OM_type;
+
+    if(om_num < 520) // mwall
+      OM_type = 1302;
+    else // xcalo
+      OM_type = 1232;
 
     // observed energy
   	double Ef = a * charge_ + b;
