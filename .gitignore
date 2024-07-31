@@ -1,2 +1,3 @@
 build
-SNCalib/Fits/?*
+SNCalib/Fits/*
+!SNCalib/Fits/.gitkeep
