@@ -150,7 +150,6 @@ dpp::chain_module::process_status charge2energy_module::process (datatools::thin
 
   const snemo::datamodel::precalibrated_data & pCD = event.get<snemo::datamodel::precalibrated_data>("pCD");
   const snemo::datamodel::particle_track_data & PTD = event.get<snemo::datamodel::particle_track_data>("PTD");
-  snemo::datamodel::calibrated_data & CD = event.grab<snemo::datamodel::calibrated_data>("CD");
 
   // calibrate associated calo hits
   for (const datatools::handle<snemo::datamodel::particle_track> & particle_track : PTD.particles())
