@@ -23,3 +23,6 @@ source_cut_ellipse_Y : real as length = 25.0 mm
 source_cut_ellipse_Z : real as length = 30.0 mm 
 
 output_path : string = "extracted_data.root" # a file to save extracted information into
+
+# a file to load calibration source positions from (if empty, they are loaded from Falaise)
+source_pos_path : string = ""

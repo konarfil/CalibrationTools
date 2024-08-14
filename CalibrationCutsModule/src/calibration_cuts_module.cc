@@ -64,26 +64,52 @@ void calibration_cuts_module::initialize (const datatools::properties & module_p
   else
     output_path_ = "extracted_data.root";
 
-  // iterate through all calibration sources and save their Y and Z positions into arrays
-  for(int i = 0;i < calib_source_rows_;i++)
-  {
-    for(int j = 0;j < calib_source_columns_;j++)
-    {
-      const geomtools::id_mgr & mgr = geo_manager_->get_id_mgr();
-      geomtools::geom_id calib_spot_id;
-      mgr.make_id("source_calibration_spot", calib_spot_id);
-      mgr.set(calib_spot_id, "module", 0);
-      mgr.set(calib_spot_id, "track", j);
-      mgr.set(calib_spot_id, "position", i);
-    
-      const geomtools::mapping & mapping = geo_manager_->get_mapping();
-      const geomtools::geom_info & calib_spot_ginfo = mapping.get_geom_info(calib_spot_id);
-      const geomtools::placement & calib_spot_placement = calib_spot_ginfo.get_world_placement();
-      const geomtools::vector_3d & calib_spot_pos  = calib_spot_placement.get_translation();
+  // read calibration source position file path from the conf file
+  if(module_properties.has_key("source_pos_path"))
+    source_pos_path_ = module_properties.fetch_string("source_pos_path");
+  else
+    source_pos_path_ = "";
 
-      calib_source_Y_[i][j] = calib_spot_pos.getY();
-      calib_source_Z_[i][j] = calib_spot_pos.getZ();
+  if(source_pos_path_ == "")
+  {
+    // iterate through all calibration sources and save their Y and Z positions into arrays
+    for(int i = 0;i < calib_source_rows_;i++)
+    {
+      for(int j = 0;j < calib_source_columns_;j++)
+      {
+        const geomtools::id_mgr & mgr = geo_manager_->get_id_mgr();
+        geomtools::geom_id calib_spot_id;
+        mgr.make_id("source_calibration_spot", calib_spot_id);
+        mgr.set(calib_spot_id, "module", 0);
+        mgr.set(calib_spot_id, "track", j);
+        mgr.set(calib_spot_id, "position", i);
+      
+        const geomtools::mapping & mapping = geo_manager_->get_mapping();
+        const geomtools::geom_info & calib_spot_ginfo = mapping.get_geom_info(calib_spot_id);
+        const geomtools::placement & calib_spot_placement = calib_spot_ginfo.get_world_placement();
+        const geomtools::vector_3d & calib_spot_pos = calib_spot_placement.get_translation();
+
+        calib_source_Y_[i][j] = calib_spot_pos.getY();
+        calib_source_Z_[i][j] = calib_spot_pos.getZ();
+      }
     }
+  }
+  else
+  {	
+  	std::ifstream source_positions_file(source_pos_path_);
+    DT_THROW_IF(source_positions_file.fail(), std::logic_error, source_pos_path_ + " does not exist !");
+
+    int i = 0;
+    std::string line;
+
+  	while (getline(source_positions_file, line)) 
+  	{
+  		calib_source_Y_[i / 6][i % 6] = std::stod(line.substr(0, line.find(";") + 1));
+  		calib_source_Z_[i / 6][i % 6] = std::stod(line.substr(line.find(";") + 1, line.length()));
+
+  		i++;
+  	}
+  	source_positions_file.close(); 
   }
 
   save_file_ = new TFile(output_path_.c_str(), "RECREATE");

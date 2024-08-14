@@ -48,6 +48,7 @@ class calibration_cuts_module : public dpp::chain_module
     datatools::handle<snemo::datamodel::vertex> vertex_close_to_a_calib_source(const datatools::handle<snemo::datamodel::particle_track> & particle);
 
     std::string output_path_; // path of a file to save extracted information into
+    std::string source_pos_path_; // path of a file to load calibration source positions from
 
     int event_counter_;
     snemo::service_handle<snemo::geometry_svc> geo_manager_{};
