@@ -12,3 +12,4 @@ install(TARGETS CalibrationCutsModule DESTINATION ${CMAKE_INSTALL_PLUGINDIR})
 
 configure_file("calibration_cuts.conf.in" "calibration_cuts.conf" @ONLY)
 configure_file("variant.profile.in" "variant.profile" @ONLY)
+configure_file("source_positions.txt.in" "source_positions.txt" @ONLY)

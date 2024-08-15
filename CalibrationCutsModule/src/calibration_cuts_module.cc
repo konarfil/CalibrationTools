@@ -72,6 +72,7 @@ void calibration_cuts_module::initialize (const datatools::properties & module_p
 
   if(source_pos_path_ == "")
   {
+    DT_LOG_INFORMATION(get_logging_priority(), "Loading calibration source positions from Falaise");
     // iterate through all calibration sources and save their Y and Z positions into arrays
     for(int i = 0;i < calib_source_rows_;i++)
     {
@@ -98,6 +99,8 @@ void calibration_cuts_module::initialize (const datatools::properties & module_p
   {	
   	std::ifstream source_positions_file(source_pos_path_);
     DT_THROW_IF(source_positions_file.fail(), std::logic_error, source_pos_path_ + " does not exist !");
+
+    DT_LOG_INFORMATION(get_logging_priority(), "Loading calibration source positions from " + source_pos_path_);
 
     int i = 0;
     std::string line;
