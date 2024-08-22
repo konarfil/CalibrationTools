@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
   std::string config_file_path = "";
   bool save_fitted_spectra = false;
   bool verbose = false;
+  int  om_num = -1;
 
   for (int iarg=1; iarg<argc; ++iarg)
   {
@@ -56,12 +57,18 @@ int main(int argc, char *argv[])
       }
       else if (arg=="-h" || arg=="--help")
       {
-        std::cout << "-h [--help]\tprint help messenge" << std::endl;
+        std::cout << "Mandatory arguments:" << std::endl;
         std::cout << "-i [--input]\tinput root file with calibration data for individual OMs" << std::endl;
+        std::cout << "-p [--config]\tconfiguration file with parameters of the calibration algorithm\n" << std::endl;
+        std::cout << "Optional arguments:" << std::endl;
+        std::cout << "-h [--help]\tprint help messenge" << std::endl;
         std::cout << "-o [--output]\toutput csv file to save calibration parameters into" << std::endl;
-        std::cout << "-p [--config]\tconfiguration file with parameters of the calibration algorithm" << std::endl;
+        std::cout << "-n [--number]\tOM number - if specified, calibrates only the chosen OM and prints parameters" << std::endl;
         std::cout << "-s [--spectra]\tflag to save fitted spectra as png files" << std::endl;
-        std::cout << "-V [--verbose]\tflag to print number of processed OM" << std::endl;
+        std::cout << "-V [--verbose]\tflag to print number of processed OM\n" << std::endl;
+        std::cout << "Either -o or -n have to be specified !\n" << std::endl;
+        std::cout << "Usage example:" << std::endl;
+        std::cout << "./sncalib -i /path/to/input.root -o /path/to/output.csv -p /path/to/config.conf -n 90 -s -V" << std::endl;
         return 0;
       }
       else if (arg=="-o" || arg=="--output")
@@ -71,6 +78,18 @@ int main(int argc, char *argv[])
       else if (arg=="-p" || arg=="--config")
       {
         config_file_path = std::string(argv[++iarg]);
+      }
+      else if (arg=="-n" || arg=="--number")
+      {
+        try
+        {
+          om_num = std::stoi(argv[++iarg]);
+        }
+        catch(const std::exception& e)
+        {
+          std::cerr << "Invalid OM number" << std::endl;
+          return 1;
+        }
       }
       else if (arg=="-s" || arg=="--spectra")
       {
@@ -93,9 +112,9 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (output_file_path.empty())
+  if (output_file_path.empty() && om_num == -1)
   {
-    std::cerr << "missing output file !" << std::endl;
+    std::cerr << "Either -o (output file) or -n (OM number) have to be specified !" << std::endl;
     return 1;
   }
 
@@ -120,34 +139,67 @@ int main(int argc, char *argv[])
                                                       pol3d_parameters_mwall_5inch_path, pol3d_parameters_xwall_path);
 
   TFile* calib_data_file = new TFile(input_file_path.c_str());
-  std::ofstream calib_param_file;
-  calib_param_file.open (output_file_path);
-  calib_param_file << "#OM_number;a;b;chi2_A;chi2_B;loss" << std::endl;
-  for(auto keyObj : *calib_data_file->GetListOfKeys())
+  // only calibrate the chosen OM
+  if(om_num != -1)
   {
-    TKey* key = (TKey*)keyObj;
-    std::string om_title = key->GetName();
+    std::string om_title = std::to_string(om_num);
     TTree* OM_data = (TTree*)calib_data_file->Get(om_title.c_str());
+
+    if(!calib_data_file->GetListOfKeys()->Contains(om_title.c_str()))
+    {
+      std::cout << "Input file does not contain the chosen OM (" << om_num << ")" << std::endl;
+      delete calib_data_file;
+      return 0;
+    }
     if(OM_data->GetEntries() < min_hits)
     {
-      continue;
+      std::cout << "Number of hits in the spectrum of chosen OM is lower than min_hits" << std::endl;
+      delete calib_data_file;
+      return 0;
     }
 
     calibration_parameter_finder finder = calibration_parameter_finder(OM_data, std::stod(config["minimization_threshold"]), 
-                                                                       std::stoi(config["max_iterations"]), save_fitted_spectra, corr_calculator);
+                                                                      std::stoi(config["max_iterations"]), save_fitted_spectra, corr_calculator);
     calib_info best_calib = finder.find_calibration_parameters();
 
-    calib_param_file << om_title << ";" << best_calib.a << ";" << best_calib.b 
-                     << ";" << best_calib.chi2_NDF_A << ";" << best_calib.chi2_NDF_B
-                     << ";" << best_calib.loss << std::endl;
+    std::cout << "OM_number;a;b;chi2_A;chi2_B;loss" << std::endl;
+    std::cout << om_title << ";" << best_calib.a << ";" << best_calib.b 
+                    << ";" << best_calib.chi2_NDF_A << ";" << best_calib.chi2_NDF_B
+                    << ";" << best_calib.loss << std::endl;
 
-    if(verbose) std::cout << "OM " << om_title << " processed" << std::endl;
-    if(best_calib.loss > minimization_threshold)
-      std::cout << "Warning: OM " << om_title << " did not converge. Lowest loss function value found (" << best_calib.loss << ") is higher than chosen threshold (" << minimization_threshold << ")" << std::endl;
   }
-  calib_param_file.close();
+  // calibrate all OMs
+  else
+  {
+    std::ofstream calib_param_file;
+    calib_param_file.open (output_file_path);
+    calib_param_file << "#OM_number;a;b;chi2_A;chi2_B;loss" << std::endl;
+    for(auto keyObj : *calib_data_file->GetListOfKeys())
+    {
+      TKey* key = (TKey*)keyObj;
+      std::string om_title = key->GetName();
+      TTree* OM_data = (TTree*)calib_data_file->Get(om_title.c_str());
+      if(OM_data->GetEntries() < min_hits)
+      {
+        continue;
+      }
+
+      calibration_parameter_finder finder = calibration_parameter_finder(OM_data, std::stod(config["minimization_threshold"]), 
+                                                                        std::stoi(config["max_iterations"]), save_fitted_spectra, corr_calculator);
+      calib_info best_calib = finder.find_calibration_parameters();
+
+      calib_param_file << om_title << ";" << best_calib.a << ";" << best_calib.b 
+                      << ";" << best_calib.chi2_NDF_A << ";" << best_calib.chi2_NDF_B
+                      << ";" << best_calib.loss << std::endl;
+
+      if(verbose) std::cout << "OM " << om_title << " processed" << std::endl;
+      if(best_calib.loss > minimization_threshold)
+        std::cout << "Warning: OM " << om_title << " did not converge. Lowest loss function value found (" << best_calib.loss << ") is higher than chosen threshold (" << minimization_threshold << ")" << std::endl;
+    }
+    calib_param_file.close();
+    delete corr_calculator;
+  }
   delete calib_data_file;
-  delete corr_calculator;
 
   return 0;
 }
