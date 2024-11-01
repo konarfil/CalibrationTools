@@ -50,4 +50,4 @@ Charge2EnergyModule reads a brio file and based on calibration parameters from a
 See the example configuration file charge2energy.conf.
 
 ## Contact
-In case of any questions or problems, do not hesitate to contact me (Filip Koňařík) through Slack or email (konarfil@cvut.cz).
+In case of any questions or problems, do not hesitate to contact me (Filip Koňařík) through Slack or contact Miroslav Macko at email miroslav.macko@cvut.cz.
